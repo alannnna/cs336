@@ -1,0 +1,13 @@
+unicode1
+
+(a) `chr(0)` returns '\x00', the null terminator.
+(b) The character's string representation is '\x00', and its printed representation is nothing.
+(c) When this character occurs in text, its repr is '\x00' but its printed representation is an empty string (note that characters that follow it are still printed).
+
+unicode2
+
+(a) UTF-8 uses variable-length encoding for characters making it more information dense (and less sparse) when the most common characters (ASCII) are used; in contrast, UTF-16 and UTF-32 use two and four bytes per character by default, making the byte representations full of zeros for common characters.
+(b) 'こ'. The function tries to decode one byte at a time, but some characters take up multiple bytes and need to be decoded together.
+(c) bytes([0b10000000,0b00000000]) (== b'\x80\x00') is invalid because a byte in the form 10xxxxxx is a continuation byte, thus the decoder cannot decode it without preceeding bytes to know what is being continued.
+
+
