@@ -52,11 +52,12 @@ def byte_pairs(data: tuple[bytes, ...]) -> Generator[tuple[bytes, bytes], Any, A
 
 
 def tuple_contains(t: tuple, subt: tuple) -> int:
-    for i in range(len(t)):
+    assert len(subt) == 2 # Code is written gneerically but only tested on len 2
+    for i in range(len(t)-len(subt)+1):
         for subi in range(len(subt)):
-            if t[i] != subt[subi]:
-                continue
-            elif subi == len(subt)-1:
+            if t[i + subi] != subt[subi]:
+                break
+            if subi == len(subt)-1:
                 return i
     return -1
 
@@ -66,7 +67,8 @@ def merge_bp(tokens: dict[tuple[bytes, ...], int], byte_pair: tuple[bytes, bytes
         found = tuple_contains(token, byte_pair)
         if (found >= 0):
             merged_bp = (byte_pair[0] + byte_pair[1],)
-            new_token = token[0:found] + merged_bp + token[found + len(byte_pair):-1]
+            new_token = token[0:found] + merged_bp + token[found+2:]
+            #print(f"replacing {token} with {new_token}")
             tokens[new_token] = tokens[token]
             tokens.pop(token)
     return tokens
@@ -85,7 +87,7 @@ def main():
 
     pretokens = pretokenize(corpus)
 
-    for _ in range(6):
+    for _ in range(12):
         pair_counts: dict[tuple[bytes, bytes], int] = defaultdict(int)
         # iterate through pretokens
         for pt in pretokens:
