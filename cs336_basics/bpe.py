@@ -63,15 +63,17 @@ def tuple_contains(t: tuple, subt: tuple) -> int:
 
 
 def merge_bp(tokens: dict[tuple[bytes, ...], int], byte_pair: tuple[bytes, bytes]):
+    merged = False
+    merged_bp = (byte_pair[0] + byte_pair[1],)
     for token in list(tokens.keys()):
         found = tuple_contains(token, byte_pair)
         if (found >= 0):
-            merged_bp = (byte_pair[0] + byte_pair[1],)
+            merged = True
             new_token = token[0:found] + merged_bp + token[found+2:]
             #print(f"replacing {token} with {new_token}")
             tokens[new_token] = tokens[token]
             tokens.pop(token)
-    return tokens
+    return tokens, merged
 
 
 def main():
@@ -83,7 +85,9 @@ def main():
     special_token = "<|endoftext|>"
 
     vocab = { i : bytes([i]) for i in range(256) }
-    vocab[256] = special_token.encode("utf-8")
+    next_vocab_ix = 256
+    vocab[next_vocab_ix] = special_token.encode("utf-8") # should this be encoded? does it matter?
+    next_vocab_ix += 1
 
     pretokens = pretokenize(corpus)
 
@@ -103,9 +107,14 @@ def main():
             if count == max_count and pair > max_pair:
                 max_pair = pair
 
-        pretokens = merge_bp(pretokens, max_pair)
+        pretokens, merged = merge_bp(pretokens, max_pair)
+        if merged:
+            vocab[next_vocab_ix] = max_pair[0] + max_pair[1]
+            next_vocab_ix += 1
         print(max_pair)
         print(pretokens)
+
+    #print(vocab)
 
 
 if __name__ == '__main__':
