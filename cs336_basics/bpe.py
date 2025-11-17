@@ -6,12 +6,17 @@ from typing import Generator, Any
 
 def pretokenize(chunk: str, special_tokens: list[str]) -> dict[tuple[bytes, ...], int]:
     counts = defaultdict(int)
+    cached_tuples = {}
     special_tokens_pattern = '|'.join(re.escape(token) for token in special_tokens)
     docs = re.split(special_tokens_pattern, chunk)
     PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
     for doc in docs:
         for match in re.finditer(PAT, doc):
-            counts[tuple(bytes([b]) for b in match.group().encode("utf-8"))] += 1
+            cached_tuple = cached_tuples.get(match.group(), None)
+            if cached_tuple is None:
+                cached_tuple = tuple(bytes([b]) for b in match.group().encode("utf-8"))
+                cached_tuples[match.group()] = cached_tuple
+            counts[cached_tuple] += 1
     return counts
 
 
