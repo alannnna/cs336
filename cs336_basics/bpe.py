@@ -27,9 +27,9 @@ def byte_pairs(data: tuple[bytes, ...]) -> Generator[tuple[bytes, bytes], Any, A
 
 
 def tuple_contains(t: tuple, subt: tuple) -> int:
-    assert len(subt) == 2 # Code is written gneerically but only tested on len 2
-    for i in range(len(t)-len(subt)+1):
-        for subi in range(len(subt)):
+    # assert len(subt) == 2
+    for i in range(len(t)-1):
+        for subi in range(2):
             if t[i + subi] != subt[subi]:
                 break
             if subi == len(subt)-1:
