@@ -13,10 +13,11 @@ def pretokenize(chunk: str, special_tokens: list[str]) -> dict[tuple[bytes, ...]
     PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
     for doc in docs:
         for match in re.finditer(PAT, doc):
-            cached_tuple = cached_tuples.get(match.group(), None)
+            mg = match.group()
+            cached_tuple = cached_tuples.get(mg, None)
             if cached_tuple is None:
-                cached_tuple = tuple(bytes([b]) for b in match.group().encode("utf-8"))
-                cached_tuples[match.group()] = cached_tuple
+                cached_tuple = tuple(bytes([b]) for b in mg.encode("utf-8"))
+                cached_tuples[mg] = cached_tuple
             counts[cached_tuple] += 1
     return counts
 
