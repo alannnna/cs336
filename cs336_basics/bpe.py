@@ -11,7 +11,6 @@ from cs336_basics.pretokenization_example import find_chunk_boundaries
 
 
 # TODO:
-# [] parallelize pretokenization
 # [] seralize vocab and merges to disk
 # [] train on OWT
 
@@ -123,7 +122,7 @@ def run_train_bpe(
         next_vocab_ix += 1
 
     serial = False
-    truncate_file = True
+    truncate_file = False
     max_file_size = 500_000_000
     if serial:
         with open(input_path, "rb") as f:
@@ -201,7 +200,7 @@ def run_train_bpe(
 def main():
     print(f"Hello! t={datetime.now()}")
     special_tokens = ["<|endoftext|>"]
-    max_vocab_size = 1_000
+    max_vocab_size = 10_000
     vocab, merges = run_train_bpe("data/TinyStoriesV2-GPT4-train.txt", max_vocab_size, special_tokens)
     print(vocab)
     print(merges)
