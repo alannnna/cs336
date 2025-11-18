@@ -10,4 +10,18 @@ unicode2
 (b) 'こ'. The function tries to decode one byte at a time, but some characters take up multiple bytes and need to be decoded together.
 (c) bytes([0b10000000,0b00000000]) (== b'\x80\x00') is invalid because a byte in the form 10xxxxxx is a continuation byte, thus the decoder cannot decode it without preceeding bytes to know what is being continued.
 
+train_bpe
+
+see bpe.py
+
+train_bpe_tinystories
+
+(a) Training took just over 24 minutes on an Apple M2 chip with 16GB RAM (single threaded). the longest tokens in the vocabulary are [b' accomplishment', b' disappointment', b' responsibility']. These words seem to make sense because they're common longer words in stories.
+(b) TODO
+
+train_bpe_expts_owt
+
+(a)
+(b)
+
 
