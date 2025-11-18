@@ -4,7 +4,16 @@ from datetime import datetime
 from collections import defaultdict
 import regex as re
 from typing import Generator, Any
+import multiprocessing as mp
+from functools import reduce
 
+from cs336_basics.pretokenization_example import find_chunk_boundaries
+
+
+# TODO:
+# [] parallelize pretokenization
+# [] seralize vocab and merges to disk
+# [] train on OWT
 
 def pretokenize(chunk: str, special_tokens: list[str]) -> dict[tuple[bytes, ...], int]:
     counts = defaultdict(int)
@@ -56,6 +65,29 @@ def merge_bp(tokens: dict[tuple[bytes, ...], int], byte_pair: tuple[bytes, bytes
     return tokens, merged
 
 
+def read_chunk_and_pretokenize(args):
+    input_path, start, end, special_tokens = args
+    with open(input_path, "rb") as f:
+        f.seek(start)
+        chunk = f.read(end - start).decode("utf-8", errors="ignore")
+    pretokens = pretokenize(chunk, special_tokens)
+    return pretokens
+
+
+# Note: mutates arguments!
+def merge_pretoken_dicts(dicts: list[dict]) -> dict:
+    if len(dicts) == 0:
+        return {}
+    ret = dicts[0]
+    for d in dicts[1:]:
+        for k, v in d.items():
+            if k in ret:
+                ret[k] += v
+            else:
+                ret[k] = v
+    return ret
+
+
 def run_train_bpe(
     input_path: str | os.PathLike,
     vocab_size: int,
@@ -83,24 +115,52 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    truncate_file = True
-    max_file_size = 500_000_000
-    with open(input_path, "rb") as f:
-        if truncate_file and os.path.getsize(input_path) > max_file_size:
-            print(f"WARN: file was {os.path.getsize(input_path)/1000/1000}MB, only reading first {max_file_size/1000/1000}MB")
-            chunk = f.read(max_file_size).decode("utf-8", errors="ignore")
-        else:
-            chunk = f.read().decode("utf-8", errors="ignore")
-
+    # set up vocab
     vocab = { i : bytes([i]) for i in range(256) }
     next_vocab_ix = 256
     for st in special_tokens:
         vocab[next_vocab_ix] = st.encode("utf-8") # should this be encoded? does it matter?
         next_vocab_ix += 1
 
-    pretokens = pretokenize(chunk, special_tokens)
-    #for k, v in list(pretokens.items())[:10]:
-    #    print(k, v)
+    serial = False
+    truncate_file = True
+    max_file_size = 500_000_000
+    if serial:
+        with open(input_path, "rb") as f:
+            if truncate_file and os.path.getsize(input_path) > max_file_size:
+                print(f"WARN: file was {os.path.getsize(input_path)/1000/1000}MB, only reading first {max_file_size/1000/1000}MB")
+                chunk = f.read(max_file_size).decode("utf-8", errors="ignore")
+            else:
+                chunk = f.read().decode("utf-8", errors="ignore")
+        pretokens = pretokenize(chunk, special_tokens)
+    else:
+        boundaries = []
+        num_processes = os.cpu_count() or 4
+        assert len(special_tokens) >= 1
+        with open(input_path, "rb") as f:
+            # Assume the first special token is okay to split chunks on...
+            boundaries = find_chunk_boundaries(f, num_processes, special_tokens[0].encode("utf-8"))
+        if not boundaries:
+            print("ERROR: couldn't find chunk boundaries")
+
+        if truncate_file:
+            new_boundaries = []
+            for b in boundaries:
+                if b < max_file_size:
+                    new_boundaries.append(b)
+                else:
+                    new_boundaries.append(max_file_size)
+                    print(f"truncated boundaries from {boundaries} to {new_boundaries}")
+                    boundaries = new_boundaries
+                    break
+
+        with mp.Pool(num_processes) as p:
+            args = [
+                (input_path, start, end, special_tokens)
+                for start, end in zip(boundaries[:-1], boundaries[1:])
+            ]
+            pretoken_dicts = p.map(read_chunk_and_pretokenize, args)
+        pretokens = merge_pretoken_dicts(pretoken_dicts)
 
     merges = []
     print_counter = 0
@@ -148,8 +208,14 @@ def main():
 
 
 if __name__ == "__main__":
-    if (len(sys.argv) >= 2 and sys.argv[1] in ['-p', '--profile']):
+    if (len(sys.argv) >= 2 and sys.argv[1] in ["-p", "--profile"]):
         import cProfile
-        cProfile.run('main()')
+        profiler = cProfile.Profile()
+        profiler.enable()
+
+        main()
+
+        profiler.disable()
+        profiler.dump_stats("output.prof")
     else:
         main()
