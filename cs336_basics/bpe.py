@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 from collections import defaultdict
 import regex as re
 from typing import Generator, Any
@@ -105,7 +106,7 @@ def run_train_bpe(
     print_counter = 0
     while len(vocab) < vocab_size:
         if (print_counter % 100 == 0):
-            print(f"starting iter {print_counter}")
+            print(f"starting iter {print_counter} t={datetime.now()}")
         print_counter += 1
 
         pair_counts: dict[tuple[bytes, bytes], int] = defaultdict(int)
@@ -138,8 +139,10 @@ def run_train_bpe(
 
 
 def main():
+    print(f"Hello! t={datetime.now()}")
     special_tokens = ["<|endoftext|>"]
-    vocab, merges = run_train_bpe("data/TinyStoriesV2-GPT4-train.txt", 1_000, special_tokens)
+    max_vocab_size = 1_000
+    vocab, merges = run_train_bpe("data/TinyStoriesV2-GPT4-train.txt", max_vocab_size, special_tokens)
     print(vocab)
     print(merges)
 
