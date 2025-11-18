@@ -1,4 +1,5 @@
 import os
+import sys
 from collections import defaultdict
 import regex as re
 from typing import Generator, Any
@@ -80,13 +81,14 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    #max_file_size = 5_000_000
+    truncate_file = True
+    max_file_size = 500_000_000
     with open(input_path, "rb") as f:
-    #    if os.path.getsize(input_path) > max_file_size:
-    #        print(f"WARN: file was {os.path.getsize(input_path)}, only reading first 5MB")
-    #        chunk = f.read(max_file_size).decode("utf-8", errors="ignore")
-    #    else:
-        chunk = f.read().decode("utf-8", errors="ignore")
+        if truncate_file and os.path.getsize(input_path) > max_file_size:
+            print(f"WARN: file was {os.path.getsize(input_path)/1000/1000}MB, only reading first {max_file_size/1000/1000}MB")
+            chunk = f.read(max_file_size).decode("utf-8", errors="ignore")
+        else:
+            chunk = f.read().decode("utf-8", errors="ignore")
 
     vocab = { i : bytes([i]) for i in range(256) }
     next_vocab_ix = 256
@@ -136,10 +138,14 @@ def run_train_bpe(
 
 def main():
     special_tokens = ["<|endoftext|>"]
-    vocab, merges = run_train_bpe("data/TinyStoriesV2-GPT4-valid.txt", 512, special_tokens)
+    vocab, merges = run_train_bpe("data/TinyStoriesV2-GPT4-train.txt", 1_000, special_tokens)
     print(vocab)
     print(merges)
 
 
 if __name__ == "__main__":
-    main()
+    if (len(sys.argv) >= 2 and sys.argv[1] in ['-p', '--profile']):
+        import cProfile
+        cProfile.run('main()')
+    else:
+        main()
