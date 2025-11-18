@@ -8,10 +8,16 @@ from typing import Generator, Any
 def pretokenize(chunk: str, special_tokens: list[str]) -> dict[tuple[bytes, ...], int]:
     counts = defaultdict(int)
     cached_tuples = {}
-    special_tokens_pattern = '|'.join(re.escape(token) for token in special_tokens)
-    docs = re.split(special_tokens_pattern, chunk)
     PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+
+    # Note: if we have multiple special tokens, it's possible to match nothing
+    # see: https://gist.github.com/alannnna/303a9ffd4c132fb19da5cd92571321c9
+    special_tokens_pattern = "(" + "|".join(re.escape(token) for token in special_tokens) + ")"
+    docs = re.split(special_tokens_pattern, chunk)
+
     for doc in docs:
+        if doc in special_tokens:
+            counts[doc] += 1
         for match in re.finditer(PAT, doc):
             mg = match.group()
             cached_tuple = cached_tuples.get(mg, None)
