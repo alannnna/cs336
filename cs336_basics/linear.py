@@ -1,4 +1,5 @@
 import torch
+from jaxtyping import Float
 
 
 class Linear(torch.nn.Module):
@@ -17,10 +18,11 @@ class Linear(torch.nn.Module):
         self.dtype = dtype
 
         # initialize weights based on 3.4.1
-        self.w = torch.nn.Parameter(torch.empty(in_features, out_features))
+        self.w: Float[torch.Tensor, "dout din"] = \
+            torch.nn.Parameter(torch.empty(in_features, out_features))
         std = 2/(in_features+out_features)
         torch.nn.init.trunc_normal_(self.w, mean=0, std=std, a=-3*std, b=3*std)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Float[torch.Tensor, " ... din"]) -> Float[torch.Tensor, " ... dout"]:
         return x.matmul(torch.t(self.w))
 
