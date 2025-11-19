@@ -122,7 +122,7 @@ def run_train_bpe(
         next_vocab_ix += 1
 
     serial = False
-    truncate_file = False
+    truncate_file = True
     max_file_size = 500_000_000
     if serial:
         with open(input_path, "rb") as f:
@@ -200,10 +200,16 @@ def run_train_bpe(
 def main():
     print(f"Hello! t={datetime.now()}")
     special_tokens = ["<|endoftext|>"]
-    max_vocab_size = 10_000
+    max_vocab_size = 500
     vocab, merges = run_train_bpe("data/TinyStoriesV2-GPT4-train.txt", max_vocab_size, special_tokens)
-    print(vocab)
-    print(merges)
+
+    # probably super inefficient, whatever
+    with open("vocab.txt", "w") as f:
+        for k, v in vocab.items():
+            f.write(f"{k},{v}\n")
+    with open("merges.txt", "w") as f:
+        for merge in merges:
+            f.write(f"{merge}\n")
 
 
 if __name__ == "__main__":
