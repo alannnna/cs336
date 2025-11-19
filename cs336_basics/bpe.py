@@ -11,8 +11,8 @@ from cs336_basics.pretokenization_example import find_chunk_boundaries
 
 
 # TODO:
-# [] seralize vocab and merges to disk
 # [] train on OWT
+#    - damn this crashes what do
 
 def pretokenize(chunk: str, special_tokens: list[str]) -> dict[tuple[bytes, ...], int]:
     counts = defaultdict(int)
@@ -200,8 +200,8 @@ def run_train_bpe(
 def main():
     print(f"Hello! t={datetime.now()}")
     special_tokens = ["<|endoftext|>"]
-    max_vocab_size = 10_000
-    vocab, merges = run_train_bpe("data/TinyStoriesV2-GPT4-train.txt", max_vocab_size, special_tokens)
+    max_vocab_size = 32_000
+    vocab, merges = run_train_bpe("data/owt_train.txt", max_vocab_size, special_tokens)
 
     # probably super inefficient, whatever
     with open("vocab.txt", "w") as f:
