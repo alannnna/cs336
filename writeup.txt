@@ -10,9 +10,7 @@ unicode2
 (b) 'こ'. The function tries to decode one byte at a time, but some characters take up multiple bytes and need to be decoded together.
 (c) bytes([0b10000000,0b00000000]) (== b'\x80\x00') is invalid because a byte in the form 10xxxxxx is a continuation byte, thus the decoder cannot decode it without preceeding bytes to know what is being continued.
 
-train_bpe
-
-see bpe.py
+train_bpe: see bpe.py
 
 train_bpe_tinystories
 
@@ -21,7 +19,16 @@ train_bpe_tinystories
 
 train_bpe_expts_owt
 
-(a)
+(a) train on owt
 (b)
+
+tokenizer: see tokenizer.py
+
+tokenizer_experiments
+
+(a) compression ratio
+(b) tokenize owt with tinystories
+(c) estimate throughput
+(d) tokenize datasets
 
 
